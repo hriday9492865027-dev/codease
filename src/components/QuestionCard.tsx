@@ -11,7 +11,10 @@ import {
   Circle, 
   BookOpen, 
   Users, 
-  Tag
+  Tag,
+  Calendar,
+  Zap,
+  HelpCircle
 } from 'lucide-react';
 
 interface QuestionCardProps {
@@ -79,23 +82,38 @@ export default function QuestionCard({ question, onStatusChange, onBookmarkToggl
   };
 
   const diffColors = getDifficultyColor(question.difficulty);
+  const qNumber = question.questionNumber || question.position || 1;
 
   return (
-    <div className={`rounded-xl border transition-all duration-200 p-5 ${
+    <div className={`rounded-2xl border transition-all duration-200 p-5 ${
       status === 'completed'
-        ? 'bg-slate-900/60 border-emerald-500/30'
+        ? 'bg-slate-900/80 border-emerald-500/40 shadow-lg shadow-emerald-500/5'
         : status === 'attempting'
-        ? 'bg-slate-900/60 border-amber-500/30'
+        ? 'bg-slate-900/80 border-amber-500/40 shadow-lg shadow-amber-500/5'
         : 'bg-[#121827] border-slate-800 hover:border-slate-700'
     } glass-panel-hover flex flex-col justify-between`}>
       
       {/* Card Header: Meta Badges */}
       <div>
         <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            
+            {/* Contest Header Badge */}
+            {question.category === 'monday' ? (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {question.contestCode ? question.contestCode : `Week ${question.weekNumber || ''}`}
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                {question.contestCode || 'STARTERS'}
+              </span>
+            )}
+
             {/* Division Badge if available */}
             {question.division && question.division !== 'all' && (
-              <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+              <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
                 question.division === 'div1' ? 'gradient-badge-div1' :
                 question.division === 'div2' ? 'gradient-badge-div2' :
                 question.division === 'div3' ? 'gradient-badge-div3' : 'gradient-badge-div4'
@@ -104,14 +122,14 @@ export default function QuestionCard({ question, onStatusChange, onBookmarkToggl
               </span>
             )}
 
-            {/* Difficulty Badge */}
-            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${diffColors.bg} ${diffColors.text} ${diffColors.border}`}>
-              {question.difficulty} {question.rating ? `(${question.rating})` : ''}
+            {/* Que # Highlight Pill */}
+            <span className="text-[11px] font-black font-mono px-2 py-0.5 rounded-md bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-sm">
+              Que {qNumber}
             </span>
 
-            {/* Problem Code Badge */}
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-              {question.problemCode}
+            {/* Difficulty Badge */}
+            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${diffColors.bg} ${diffColors.text} ${diffColors.border}`}>
+              {question.difficulty} {question.rating ? `(${question.rating})` : ''}
             </span>
           </div>
 
@@ -129,10 +147,20 @@ export default function QuestionCard({ question, onStatusChange, onBookmarkToggl
           </button>
         </div>
 
-        {/* Title */}
-        <h4 className="text-base font-bold text-white group-hover:text-orange-400 transition-colors mb-2">
-          {question.title}
-        </h4>
+        {/* Problem Title & Code */}
+        <div className="space-y-1 mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60">
+              {question.problemCode}
+            </span>
+            <span className="text-[11px] text-slate-400 font-medium truncate">
+              {question.contestTitle}
+            </span>
+          </div>
+          <h4 className="text-base font-bold text-white group-hover:text-orange-400 transition-colors">
+            {question.title}
+          </h4>
+        </div>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mb-4">
@@ -225,9 +253,9 @@ export default function QuestionCard({ question, onStatusChange, onBookmarkToggl
               href={question.problemUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold shadow-md shadow-orange-600/20 transition-all hover:scale-[1.02]"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold shadow-md shadow-orange-600/20 transition-all hover:scale-[1.02]"
             >
-              <span>Solve</span>
+              <span>Solve on CodeChef</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
