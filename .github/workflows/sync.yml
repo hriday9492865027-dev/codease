@@ -1,0 +1,38 @@
+name: CodeChef Weekly Question Sync
+
+on:
+  schedule:
+    # Run every Monday at 06:00 UTC (11:30 AM IST)
+    - cron: '0 6 * * 1'
+    # Run every Wednesday at 16:30 UTC (10:00 PM IST after Starters)
+    - cron: '30 16 * * 3'
+  workflow_dispatch:
+
+jobs:
+  sync-questions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codease repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r automation/requirements.txt
+
+      - name: Run Automation Sync
+        env:
+          CODECHEF_EMAIL: ${{ secrets.CODECHEF_EMAIL }}
+          CODECHEF_PASSWORD: ${{ secrets.CODECHEF_PASSWORD }}
+        run: |
+          python automation/sync.py --category all
+
+      - name: Commit & Push updated question sets
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "🤖 Auto-sync: Update CodeChef Monday & Wednesday question sets"
+          file_pattern: "src/lib/*.json"
