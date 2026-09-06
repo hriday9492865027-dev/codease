@@ -1,27 +1,35 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { initialQuestionSets } from '../../lib/data-store';
 import ContestCard from '../../components/ContestCard';
-import { Archive, Calendar, Zap, Search } from 'lucide-react';
+import { Archive, Calendar, Zap, Search, ChevronDown } from 'lucide-react';
 
 export default function ArchivePage() {
-  const [sets] = useState(initialQuestionSets);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'monday' | 'wednesday'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(20);
 
-  const filteredSets = sets.filter(s => {
-    if (categoryFilter !== 'all' && s.category !== categoryFilter) return false;
-    if (searchQuery.trim() !== '') {
-      const matchTitle = s.title.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchQuestions = s.questions.some(q => 
-        q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        q.problemCode.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      return matchTitle || matchQuestions;
-    }
-    return true;
-  });
+  const filteredSets = useMemo(() => {
+    return initialQuestionSets.filter(s => {
+      if (categoryFilter !== 'all' && s.category !== categoryFilter) return false;
+      if (searchQuery.trim() !== '') {
+        const matchTitle = s.title.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchQuestions = s.questions.some(q => 
+          q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          q.problemCode.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        return matchTitle || matchQuestions;
+      }
+      return true;
+    });
+  }, [categoryFilter, searchQuery]);
+
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [categoryFilter, searchQuery]);
+
+  const paginatedSets = filteredSets.slice(0, visibleCount);
 
   return (
     <div className="space-y-8">
@@ -68,7 +76,7 @@ export default function ArchivePage() {
                   : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
-              All Sets ({sets.length})
+              All Sets ({initialQuestionSets.length})
             </button>
             <button
               onClick={() => setCategoryFilter('monday')}
@@ -99,13 +107,25 @@ export default function ArchivePage() {
 
       {/* Archive Sets */}
       <div className="space-y-8">
-        {filteredSets.map((set) => (
+        {paginatedSets.map((set) => (
           <ContestCard key={set.id} questionSet={set} initialDivision="all" showAllDivisionsByDefault={true} />
         ))}
 
         {filteredSets.length === 0 && (
           <div className="text-center py-12 glass-panel rounded-2xl border border-slate-800">
             <p className="text-sm text-slate-400">No archived question sets found matching your query.</p>
+          </div>
+        )}
+
+        {visibleCount < filteredSets.length && (
+          <div className="text-center pt-4">
+            <button
+              onClick={() => setVisibleCount(prev => prev + 20)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-sm font-semibold text-slate-200 transition-all hover:scale-[1.02]"
+            >
+              <span>Load More Archived Contests ({filteredSets.length - visibleCount} remaining)</span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
           </div>
         )}
       </div>
