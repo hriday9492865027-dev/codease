@@ -361,10 +361,10 @@ function generateCompleteCatalog(): QuestionSet[] {
     });
   }
 
-  // 2. Generate Wednesday Starters (START176 down to START1, Div 4, 3, 2, 1, Que 1 to 7)
+  // 2. Generate Wednesday Starters (START254 down to START1, Div 4, 3, 2, 1, Que 1 to 7)
   const divs: Array<'div4' | 'div3' | 'div2' | 'div1'> = ['div4', 'div3', 'div2', 'div1'];
 
-  for (let c = 176; c >= 1; c--) {
+  for (let c = 254; c >= 1; c--) {
     const curatedContest = STARTERS_CONTEST_DATA[c];
     const questions: Question[] = [];
 
