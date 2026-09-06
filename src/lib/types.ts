@@ -18,6 +18,7 @@ export interface Question {
   rating?: number | null;
   tags: string[];
   problemUrl: string;
+  submitUrl?: string;
   editorialUrl?: string;
   category: QuestionCategory;
   division?: 'div1' | 'div2' | 'div3' | 'div4' | 'all';
