@@ -258,14 +258,7 @@ const baseSets: QuestionSet[] = [
 function getInitialSets(): QuestionSet[] {
   try {
     if (scrapedJson && scrapedJson.sets && scrapedJson.sets.length > 0) {
-      // Return fresh scraped sets combined with base sets
-      const merged = [...(scrapedJson.sets as unknown as QuestionSet[])];
-      for (const base of baseSets) {
-        if (!merged.some(m => m.id === base.id)) {
-          merged.push(base);
-        }
-      }
-      return merged;
+      return scrapedJson.sets as unknown as QuestionSet[];
     }
   } catch {
     // fallback
