@@ -1,73 +1,64 @@
 """
-Automated Synchronization Engine for CodeChef Question Hub
-Supports individual sync, scheduled runs, and complete historical archiving
+Automated Synchronization Engine for CodeChef Question Hub powered by Scrapy
+Supports Scrapy-driven real-time crawling, scheduled workflows, and complete archive generation.
 """
 
-import sys
 import os
-import json
+import sys
 import argparse
-from datetime import datetime, timezone
-from codechef_scraper import CodeChefScraper
+from datetime import datetime
 
-DATA_OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "src", "lib", "scraped_data.json")
-
-def run_sync(category: str = "all", contest_num: int = 176, all_history: bool = False, start_contest: int = 165, end_contest: int = 176):
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Starting CodeChef Question Sync...")
-    scraper = CodeChefScraper()
-    scraper.login()
-
-    scraped_sets = []
-
-    if all_history:
-        print(f"[ARCHIVE] Fetching ALL historical Starters contests (from {start_contest} to {end_contest})...")
-        starters_sets = scraper.fetch_all_historical_starters(start_contest=start_contest, end_contest=end_contest)
-        scraped_sets.extend(starters_sets)
-
-        print("[ARCHIVE] Fetching ALL historical Monday DSA Challenge weeks (Weeks 1 to 10)...")
-        monday_sets = scraper.fetch_all_historical_monday()
-        scraped_sets.extend(monday_sets)
-    else:
-        if category in ("all", "wednesday"):
-            print(f"[SYNC] Fetching Wednesday Starters {contest_num}...")
-            starters_set = scraper.fetch_starters_contest(contest_num)
-            scraped_sets.append(starters_set)
-
-        if category in ("all", "monday"):
-            print("[SYNC] Fetching all Monday DSA Challenge sets...")
-            monday_sets = scraper.fetch_all_historical_monday()
-            scraped_sets.extend(monday_sets)
-
-    output_data = {
-        "lastSynced": datetime.now(timezone.utc).isoformat(),
-        "category": "all_history" if all_history else category,
-        "sets": scraped_sets,
-        "totalQuestions": sum(len(s["questions"]) for s in scraped_sets),
-    }
-
+# Safe UTF-8 console output for Windows
+if sys.stdout.encoding != 'utf-8':
     try:
-        with open(DATA_OUTPUT_PATH, "w", encoding="utf-8") as f:
-            json.dump(output_data, f, indent=2)
-        print(f"[SUCCESS] Scraped data saved to {DATA_OUTPUT_PATH}")
-    except Exception as e:
-        print(f"[WARN] Could not write to local file: {e}")
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
-    print(f"[DONE] Sync completed: {len(scraped_sets)} sets with {output_data['totalQuestions']} total questions recorded.")
-    return output_data
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
+
+def run_scrapy_sync(category: str = "all", contest: int = 254, start_contest: int = 1, end_contest: int = 254, start_week: int = 1, end_week: int = 18):
+    # Ensure crawler directory is on Python path
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    os.environ.setdefault("SCRAPY_SETTINGS_MODULE", "codechef_crawler.settings")
+    sys.path.insert(0, current_dir)
+
+    settings = get_project_settings()
+    process = CrawlerProcess(settings)
+
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Starting Scrapy CodeChef Synchronization Pipeline...")
+
+    from codechef_crawler.spiders.starters_spider import StartersSpider
+    from codechef_crawler.spiders.monday_spider import MondaySpider
+
+    if category in ("all", "wednesday"):
+        print(f"[STARTERS] Queueing StartersSpider (Contests {start_contest} to {end_contest})...")
+        process.crawl(StartersSpider, start=start_contest, end=end_contest)
+
+    if category in ("all", "monday"):
+        print(f"[MONDAY] Queueing MondaySpider (Weeks {start_week} to {end_week})...")
+        process.crawl(MondaySpider, start_week=start_week, end_week=end_week)
+
+    print("[START] Running Scrapy asynchronous engine...")
+    process.start()
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [DONE] Scrapy Sync completed successfully!")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="CodeChef Weekly Question Hub Sync Bot")
+    parser = argparse.ArgumentParser(description="CodeChef Question Hub Scrapy Sync Bot")
     parser.add_argument("--category", choices=["all", "monday", "wednesday"], default="all", help="Contest category to sync")
-    parser.add_argument("--contest", type=int, default=176, help="Specific Starters contest number")
-    parser.add_argument("--all-history", action="store_true", help="Fetch complete historical archive of previous Starters & Monday DSA")
-    parser.add_argument("--start-contest", type=int, default=165, help="Starting historical contest number")
-    parser.add_argument("--end-contest", type=int, default=176, help="Ending contest number")
+    parser.add_argument("--contest", type=int, default=254, help="Specific Starters contest number")
+    parser.add_argument("--start-contest", type=int, default=1, help="Starting Starters contest number")
+    parser.add_argument("--end-contest", type=int, default=254, help="Ending Starters contest number")
+    parser.add_argument("--start-week", type=int, default=1, help="Starting Monday DSA week")
+    parser.add_argument("--end-week", type=int, default=18, help="Ending Monday DSA week")
     args = parser.parse_args()
 
-    run_sync(
-        category=args.category, 
-        contest_num=args.contest, 
-        all_history=args.all_history, 
-        start_contest=args.start_contest, 
-        end_contest=args.end_contest
+    run_scrapy_sync(
+        category=args.category,
+        contest=args.contest,
+        start_contest=args.start_contest,
+        end_contest=args.end_contest,
+        start_week=args.start_week,
+        end_week=args.end_week
     )
